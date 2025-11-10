@@ -13,8 +13,7 @@ okra-maturity-classification/
 │
 ├── Okra_Dataset/
 │ ├── adequate_matured_Okra/
-│ ├── over_matured_Okra/
-│
+│ ├── over_matured_Okra/│
 ├── models/
 │ ├── okra.ipynb
 │
