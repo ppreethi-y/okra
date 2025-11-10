@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Okra Maturity Classifier</title>
+    <style>
+        :root {
+            --primary-color: #4CAF50;
+            --primary-dark: #388E3C;
+            --secondary-color: #FF9800;
+            --light-color: #f5f5f5;
+            --dark-color: #333;
+            --shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            --error-color: #f44336;
+            --success-color: #4CAF50;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background-color: #f9f9f9;
+            color: var(--dark-color);
+            line-height: 1.6;
+        }
+        
+        header {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 1.5rem;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 2rem auto;
+            padding: 0 1.5rem;
+        }
+        
+        .card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+        
+        .upload-area {
+            border: 2px dashed #ccc;
+            border-radius: 8px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 1.5rem;
+        }
+        
+        .upload-area:hover {
+            border-color: var(--primary-color);
+            background-color: rgba(76, 175, 80, 0.05);
+        }
+        
+        .upload-area.active {
+            border-color: var(--primary-color);
+            background-color: rgba(76, 175, 80, 0.1);
+        }
+        
+        .upload-icon {
+            font-size: 3rem;
+            color: #ccc;
+            margin-bottom: 1rem;
+        }
+        
+        .upload-text {
+            color: #666;
+        }
+        
+        .btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: background-color 0.3s ease;
+            display: inline-block;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .btn:hover {
+            background-color: var(--primary-dark);
+        }
+        
+        .btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        
+        .btn-secondary {
+            background-color: var(--secondary-color);
+        }
+        
+        .btn-secondary:hover {
+            background-color: #F57C00;
+        }
+        
+        .btn-danger {
+            background-color: var(--error-color);
+        }
+        
+        .btn-danger:hover {
+            background-color: #d32f2f;
+        }
+        
+        .image-preview {
+            max-width: 100%;
+            max-height: 300px;
+            margin: 1.5rem 0;
+            display: none;
+            border-radius: 4px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .result-container {
+            display: none;
+            margin-top: 2rem;
+            padding: 1.5rem;
+            border-radius: 8px;
+            background-color: #f5f5f5;
+        }
+        
+        .prediction {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: var(--primary-dark);
+        }
+        
+        .confidence {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+        
+        .confidence-label {
+            min-width: 150px;
+        }
+        
+        .confidence-bar {
+            flex-grow: 1;
+            height: 20px;
+            background-color: #e0e0e0;
+            border-radius: 10px;
+            margin: 0 1rem;
+            overflow: hidden;
+        }
+        
+        .confidence-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 10px;
+        }
+        
+        .confidence-value {
+            font-weight: bold;
+            min-width: 60px;
+            text-align: right;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin: 2rem 0;
+        }
+        
+        .spinner {
+            border: 4px solid rgba(0, 0, 0, 0.1);
+            border-left-color: var(--primary-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 1rem;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        .info-section {
+            margin-top: 3rem;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+        
+        .info-card {
+            background-color: white;
+            border-radius: 8px;
+            box-shadow: var(--shadow);
+            padding: 1.5rem;
+        }
+        
+        .info-card h3 {
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+        
+        .alert {
+            padding: 1rem;
+            border-radius: 4px;
+            margin: 1rem 0;
+            display: none;
+        }
+        
+        .alert-error {
+            background-color: #ffebee;
+            color: var(--error-color);
+            border: 1px solid #ffcdd2;
+        }
+        
+        .alert-success {
+            background-color: #e8f5e8;
+            color: var(--success-color);
+            border: 1px solid #c8e6c9;
+        }
+        
+        .batch-results {
+            margin-top: 2rem;
+        }
+        
+        .batch-result-item {
+            background: white;
+            padding: 1rem;
+            margin-bottom: 1rem;
+            border-radius: 4px;
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        footer {
+            background-color: var(--dark-color);
+            color: white;
+            text-align: center;
+            padding: 1.5rem;
+            margin-top: 3rem;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 1rem;
+            }
+            
+            .card {
+                padding: 1.5rem;
+            }
+            
+            .upload-area {
+                padding: 2rem;
+            }
+            
+            .confidence {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            
+            .confidence-bar {
+                width: 100%;
+                margin: 0.5rem 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Okra Maturity Classifier</h1>
+        <p>Upload an image of okra to determine its maturity level</p>
+    </header>
+    
+    <div class="container">
+        <div class="card">
+            <h2>Classify Okra Maturity</h2>
+            <p>Upload an image of okra to determine if it's mature or over-matured.</p>
+            
+            <div class="alert" id="alertBox"></div>
+            
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">📁</div>
+                <p class="upload-text">Drag & drop an image here or click to browse</p>
+                <p class="upload-text" style="font-size: 0.9rem; margin-top: 0.5rem;">
+                    Supported formats: JPG, PNG, GIF (Max 16MB)
+                </p>
+                <input type="file" id="fileInput" accept="image/*" style="display: none;">
+                <input type="file" id="batchFileInput" accept="image/*" multiple style="display: none;">
+            </div>
+            
+            <div>
+                <button id="singleUploadBtn" class="btn">Single Image</button>
+                <button id="batchUploadBtn" class="btn btn-secondary">Multiple Images</button>
+            </div>
+            
+            <div id="imagePreviewContainer" style="display: none;">
+                <img id="imagePreview" class="image-preview" src="" alt="Preview">
+                <button id="classifyBtn" class="btn">Classify Okra</button>
+                <button id="resetBtn" class="btn btn-secondary">Reset</button>
+            </div>
+            
+            <div id="batchPreviewContainer" style="display: none;">
+                <div id="batchFileList"></div>
+                <button id="batchClassifyBtn" class="btn">Classify All Images</button>
+                <button id="batchResetBtn" class="btn btn-secondary">Reset</button>
+            </div>
+            
+            <div class="loading" id="loadingIndicator">
+                <div class="spinner"></div>
+                <p>Analyzing image... Please wait</p>
+            </div>
+            
+            <div class="result-container" id="resultContainer">
+                <h3>Classification Result</h3>
+                <div class="prediction" id="predictionText"></div>
+                
+                <div class="confidence">
+                    <span class="confidence-label">Mature Okra:</span>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" id="matureConfidence"></div>
+                    </div>
+                    <span class="confidence-value" id="matureValue">0%</span>
+                </div>
+                
+                <div class="confidence">
+                    <span class="confidence-label">Over-matured Okra:</span>
+                    <div class="confidence-bar">
+                        <div class="confidence-fill" id="overMatureConfidence"></div>
+                    </div>
+                    <span class="confidence-value" id="overMatureValue">0%</span>
+                </div>
+            </div>
+            
+            <div class="batch-results" id="batchResultsContainer" style="display: none;">
+                <h3>Batch Classification Results</h3>
+                <div id="batchResultsList"></div>
+            </div>
+        </div>
+        
+        <div class="info-section">
+            <h2>About Okra Maturity</h2>
+            <div class="info-grid">
+                <div class="info-card">
+                    <h3>Mature Okra</h3>
+                    <p>Mature okra pods are firm, bright green, and about 2-4 inches long. They have a tender texture and are ideal for cooking.</p>
+                </div>
+                
+                <div class="info-card">
+                    <h3>Over-matured Okra</h3>
+                    <p>Over-matured okra pods are larger, tougher, and may have a woody texture. They are often darker in color and may have visible ridges.</p>
+                </div>
+                
+                <div class="info-card">
+                    <h3>How It Works</h3>
+                    <p>This classifier uses a deep learning model based on VGG19 architecture trained on hundreds of okra images to accurately determine maturity.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer>
+        <p>Okra Maturity Classifier &copy; 2023 | Powered by TensorFlow & Flask</p>
+    </footer>
+
+    <script>
+        // Backend API configuration
+        const API_BASE_URL = 'http://localhost:5000';
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Elements
+            const uploadArea = document.getElementById('uploadArea');
+            const fileInput = document.getElementById('fileInput');
+            const batchFileInput = document.getElementById('batchFileInput');
+            const imagePreview = document.getElementById('imagePreview');
+            const imagePreviewContainer = document.getElementById('imagePreviewContainer');
+            const batchPreviewContainer = document.getElementById('batchPreviewContainer');
+            const batchFileList = document.getElementById('batchFileList');
+            const classifyBtn = document.getElementById('classifyBtn');
+            const batchClassifyBtn = document.getElementById('batchClassifyBtn');
+            const resetBtn = document.getElementById('resetBtn');
+            const batchResetBtn = document.getElementById('batchResetBtn');
+            const singleUploadBtn = document.getElementById('singleUploadBtn');
+            const batchUploadBtn = document.getElementById('batchUploadBtn');
+            const loadingIndicator = document.getElementById('loadingIndicator');
+            const resultContainer = document.getElementById('resultContainer');
+            const batchResultsContainer = document.getElementById('batchResultsContainer');
+            const batchResultsList = document.getElementById('batchResultsList');
+            const predictionText = document.getElementById('predictionText');
+            const matureConfidence = document.getElementById('matureConfidence');
+            const matureValue = document.getElementById('matureValue');
+            const overMatureConfidence = document.getElementById('overMatureConfidence');
+            const overMatureValue = document.getElementById('overMatureValue');
+            const alertBox = document.getElementById('alertBox');
+            
+            let currentMode = 'single'; // 'single' or 'batch'
+            let batchFiles = [];
+            
+            // Event listeners
+            singleUploadBtn.addEventListener('click', () => setMode('single'));
+            batchUploadBtn.addEventListener('click', () => setMode('batch'));
+            
+            uploadArea.addEventListener('click', () => {
+                if (currentMode === 'single') {
+                    fileInput.click();
+                } else {
+                    batchFileInput.click();
+                }
+            });
+            
+            uploadArea.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                uploadArea.classList.add('active');
+            });
+            
+            uploadArea.addEventListener('dragleave', () => {
+                uploadArea.classList.remove('active');
+            });
+            
+            uploadArea.addEventListener('drop', (e) => {
+                e.preventDefault();
+                uploadArea.classList.remove('active');
+                
+                if (e.dataTransfer.files.length) {
+                    if (currentMode === 'single') {
+                        fileInput.files = e.dataTransfer.files;
+                        handleFileSelect(e.dataTransfer.files[0]);
+                    } else {
+                        handleBatchFileSelect(Array.from(e.dataTransfer.files));
+                    }
+                }
+            });
+            
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleFileSelect(e.target.files[0]);
+                }
+            });
+            
+            batchFileInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleBatchFileSelect(Array.from(e.target.files));
+                }
+            });
+            
+            classifyBtn.addEventListener('click', classifyImage);
+            batchClassifyBtn.addEventListener('click', classifyBatchImages);
+            resetBtn.addEventListener('click', resetInterface);
+            batchResetBtn.addEventListener('click', resetBatchInterface);
+            
+            // Check server health on load
+            checkServerHealth();
+            
+            // Functions
+            function setMode(mode) {
+                currentMode = mode;
+                resetInterface();
+                resetBatchInterface();
+                
+                if (mode === 'single') {
+                    singleUploadBtn.classList.add('active');
+                    batchUploadBtn.classList.remove('active');
+                    uploadArea.querySelector('.upload-text').textContent = 
+                        'Drag & drop an image here or click to browse';
+                } else {
+                    batchUploadBtn.classList.add('active');
+                    singleUploadBtn.classList.remove('active');
+                    uploadArea.querySelector('.upload-text').textContent = 
+                        'Drag & drop images here or click to browse (multiple selection)';
+                }
+            }
+            
+            function handleFileSelect(file) {
+                if (!validateFile(file)) return;
+                
+                const reader = new FileReader();
+                
+                reader.onload = function(e) {
+                    imagePreview.src = e.target.result;
+                    imagePreviewContainer.style.display = 'block';
+                    resultContainer.style.display = 'none';
+                    hideAlert();
+                };
+                
+                reader.readAsDataURL(file);
+            }
+            
+            function handleBatchFileSelect(files) {
+                // Filter valid files
+                batchFiles = files.filter(file => validateFile(file));
+                
+                if (batchFiles.length === 0) return;
+                
+                // Display file list
+                batchFileList.innerHTML = '';
+                batchFiles.forEach((file, index) => {
+                    const fileItem = document.createElement('div');
+                    fileItem.className = 'batch-result-item';
+                    fileItem.innerHTML = `
+                        <strong>${file.name}</strong>
+                        <span style="float: right; color: #666;">Ready</span>
+                    `;
+                    batchFileList.appendChild(fileItem);
+                });
+                
+                batchPreviewContainer.style.display = 'block';
+                batchResultsContainer.style.display = 'none';
+                hideAlert();
+            }
+            
+            function validateFile(file) {
+                const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
+                const maxSize = 16 * 1024 * 1024; // 16MB
+                
+                if (!allowedTypes.includes(file.type)) {
+                    showAlert('Please select a valid image file (JPG, PNG, GIF).', 'error');
+                    return false;
+                }
+                
+                if (file.size > maxSize) {
+                    showAlert('File size too large. Maximum size is 16MB.', 'error');
+                    return false;
+                }
+                
+                return true;
+            }
+            
+            async function classifyImage() {
+                if (!fileInput.files.length) {
+                    showAlert('Please select an image first.', 'error');
+                    return;
+                }
+                
+                const file = fileInput.files[0];
+                await sendClassificationRequest(file, 'single');
+            }
+            
+            async function classifyBatchImages() {
+                if (batchFiles.length === 0) {
+                    showAlert('Please select images first.', 'error');
+                    return;
+                }
+                
+                await sendClassificationRequest(batchFiles, 'batch');
+            }
+            
+            async function sendClassificationRequest(files, type) {
+                showLoading(true);
+                hideAlert();
+                
+                const formData = new FormData();
+                
+                if (type === 'single') {
+                    formData.append('file', files);
+                } else {
+                    files.forEach(file => {
+                        formData.append('files', file);
+                    });
+                }
+                
+                try {
+                    const endpoint = type === 'single' ? '/classify' : '/batch-classify';
+                    const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    const result = await response.json();
+                    
+                    if (!response.ok) {
+                        throw new Error(result.error || 'Classification failed');
+                    }
+                    
+                    if (type === 'single') {
+                        updateResults(result);
+                    } else {
+                        updateBatchResults(result.results);
+                    }
+                    
+                } catch (error) {
+                    console.error('Classification error:', error);
+                    showAlert(`Classification failed: ${error.message}`, 'error');
+                } finally {
+                    showLoading(false);
+                }
+            }
+            
+            function updateResults(result) {
+                // Update prediction text
+                predictionText.textContent = `Prediction: ${result.formatted_prediction}`;
+                
+                // Update confidence bars and values
+                const matureProb = result.all_predictions.mature_Okra || 0;
+                const overMatureProb = result.all_predictions.over_matured_Okra || 0;
+                
+                matureConfidence.style.width = `${matureProb * 100}%`;
+                matureValue.textContent = `${(matureProb * 100).toFixed(1)}%`;
+                
+                overMatureConfidence.style.width = `${overMatureProb * 100}%`;
+                overMatureValue.textContent = `${(overMatureProb * 100).toFixed(1)}%`;
+                
+                // Show result container
+                resultContainer.style.display = 'block';
+                
+                showAlert(`Classification successful! Confidence: ${(result.confidence * 100).toFixed(1)}%`, 'success');
+            }
+            
+            function updateBatchResults(results) {
+                batchResultsList.innerHTML = '';
+                
+                results.forEach((result, index) => {
+                    const resultItem = document.createElement('div');
+                    resultItem.className = 'batch-result-item';
+                    
+                    if (result.error) {
+                        resultItem.innerHTML = `
+                            <strong>${result.filename}</strong>
+                            <span style="color: var(--error-color); float: right;">Error</span>
+                            <div style="color: var(--error-color); margin-top: 0.5rem;">${result.error}</div>
+                        `;
+                    } else {
+                        const confidencePercent = (result.confidence * 100).toFixed(1);
+                        resultItem.innerHTML = `
+                            <strong>${result.filename}</strong>
+                            <span style="color: var(--success-color); float: right;">${confidencePercent}%</span>
+                            <div style="margin-top: 0.5rem;">
+                                <strong>${result.formatted_prediction}</strong>
+                                <div class="confidence-bar" style="margin: 0.5rem 0;">
+                                    <div class="confidence-fill" style="width: ${confidencePercent}%"></div>
+                                </div>
+                            </div>
+                        `;
+                    }
+                    
+                    batchResultsList.appendChild(resultItem);
+                });
+                
+                batchResultsContainer.style.display = 'block';
+                showAlert(`Batch classification completed! Processed ${results.length} images.`, 'success');
+            }
+            
+            function resetInterface() {
+                fileInput.value = '';
+                imagePreview.src = '';
+                imagePreviewContainer.style.display = 'none';
+                resultContainer.style.display = 'none';
+                batchPreviewContainer.style.display = 'none';
+                batchResultsContainer.style.display = 'none';
+                hideAlert();
+            }
+            
+            function resetBatchInterface() {
+                batchFiles = [];
+                batchFileInput.value = '';
+                batchFileList.innerHTML = '';
+                batchPreviewContainer.style.display = 'none';
+                batchResultsContainer.style.display = 'none';
+                hideAlert();
+            }
+            
+            function showLoading(show) {
+                loadingIndicator.style.display = show ? 'block' : 'none';
+                classifyBtn.disabled = show;
+                batchClassifyBtn.disabled = show;
+            }
+            
+            function showAlert(message, type) {
+                alertBox.textContent = message;
+                alertBox.className = `alert alert-${type}`;
+                alertBox.style.display = 'block';
+                
+                // Auto-hide success messages after 5 seconds
+                if (type === 'success') {
+                    setTimeout(hideAlert, 5000);
+                }
+            }
+            
+            function hideAlert() {
+                alertBox.style.display = 'none';
+            }
+            
+            async function checkServerHealth() {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/health`);
+                    const data = await response.json();
+                    
+                    if (data.model_loaded) {
+                        showAlert('Server is ready for classification!', 'success');
+                    } else {
+                        showAlert('Server is running but model is not loaded. Classification may not work.', 'error');
+                    }
+                } catch (error) {
+                    showAlert('Cannot connect to server. Please make sure the backend is running.', 'error');
+                }
+            }
+        });
+    </script>
+</body>
+</html>
