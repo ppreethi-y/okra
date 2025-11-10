@@ -6,23 +6,4 @@ Okra maturity directly affects its edibility and market value —
 immature pods are tender and desirable,while over-mature pods become fibrous.
 Traditional manual grading is subjective and time-consuming, which makes **AI-based thermal analysis** a powerful alternative.
 
-okra-maturity-classification/
-│
-├── Okra_Dataset/
-│ ├── adequate_matured_Okra/
-│ ├── over_matured_Okra/
-│   
-│
-├── models/
-│ ├── okra.ipynb
-│
-├── utils/
-│ ├── run.py
-│ └── test.py
-│ └── app.py
-├── results/
-│ ├── accuracy_curve.png/
-│ ├── gradcam_results
-│ └──gradcam_report
-│
-└── README.md
+
