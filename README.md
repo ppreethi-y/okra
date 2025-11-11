@@ -27,5 +27,4 @@ okra-maturity-classification/
 │ ├── accuracy_curve.png/
 │ ├── gradcam_results
 │ └──gradcam_report
-│
 └── README.md
